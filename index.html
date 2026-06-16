@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartCity 회의실 예약 자동화</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+        --blue: #1463FF;
+        --blue-dark: #0A3FC4;
+        --green: #00C896;
+        --bg: #F2F4F8;
+        --card: #FFFFFF;
+        --text: #1A1D29;
+        --text-sub: #6B7280;
+        --radius: 20px;
+    }
+
+    body {
+        font-family: -apple-system, 'Apple SD Gothic Neo', 'Pretendard', 'Noto Sans KR', Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        display: flex;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .app {
+        width: 100%;
+        max-width: 430px;
+        background: var(--bg);
+        min-height: 100vh;
+        padding-bottom: 40px;
+    }
+
+    /* ===== Hero ===== */
+    .hero {
+        background: linear-gradient(160deg, var(--blue) 0%, var(--blue-dark) 100%);
+        color: white;
+        padding: 48px 24px 36px;
+        border-radius: 0 0 32px 32px;
+        text-align: center;
+    }
+
+    .hero .eyebrow {
+        display: inline-block;
+        background: rgba(255,255,255,0.15);
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+    }
+
+    .hero h1 {
+        font-size: 26px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        letter-spacing: -0.5px;
+    }
+
+    .hero .subtitle {
+        font-size: 13px;
+        opacity: 0.9;
+        margin-bottom: 14px;
+        line-height: 1.6;
+    }
+
+    .hero .intro {
+        font-size: 13px;
+        opacity: 0.85;
+        padding: 0 4px;
+    }
+
+    /* ===== Section / Card ===== */
+    .section {
+        padding: 24px 20px 4px;
+    }
+
+    .section-title {
+        font-size: 17px;
+        font-weight: 800;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .card {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(20, 40, 160, 0.06);
+        margin-bottom: 14px;
+    }
+
+    /* ===== Buttons ===== */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 13px 20px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.15s;
+        white-space: nowrap;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-block {
+        width: 100%;
+        background: var(--blue);
+        color: white;
+        box-shadow: 0 6px 16px rgba(20, 99, 255, 0.3);
+    }
+
+    .btn-green {
+        background: var(--green);
+        color: white;
+        box-shadow: 0 6px 16px rgba(0, 200, 150, 0.3);
+    }
+
+    /* ===== 프로젝트 개요 ===== */
+    .overview-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        font-size: 13px;
+        border-bottom: 1px solid #F0F1F4;
+        gap: 12px;
+    }
+    .overview-row:last-child { border-bottom: none; }
+    .overview-row .label {
+        color: var(--text-sub);
+        font-weight: 600;
+        flex-shrink: 0;
+        width: 78px;
+    }
+    .overview-row .value {
+        text-align: right;
+        font-weight: 500;
+    }
+
+    .tag-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
+    .tag {
+        background: #EEF2FF;
+        color: var(--blue);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 999px;
+    }
+
+    /* ===== 흐름 / 핵심 기능 (accordion) ===== */
+    .step-card {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 16px rgba(20, 40, 160, 0.05);
+        cursor: pointer;
+        transition: box-shadow 0.2s;
+    }
+
+    .step-card.open {
+        box-shadow: 0 6px 22px rgba(20, 40, 160, 0.12);
+    }
+
+    .step-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .step-num {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .step-card.achievement .step-num {
+        background: linear-gradient(135deg, var(--green), #00A37C);
+    }
+
+    .step-title {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .step-arrow {
+        font-size: 12px;
+        color: var(--text-sub);
+        transition: transform 0.25s;
+        flex-shrink: 0;
+    }
+
+    .step-card.open .step-arrow {
+        transform: rotate(180deg);
+    }
+
+    .step-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+    .step-card.open .step-body {
+        max-height: 220px;
+    }
+
+    .step-body-inner {
+        padding-top: 12px;
+        font-size: 12.5px;
+        color: var(--text-sub);
+        line-height: 1.7;
+    }
+
+    /* ===== GUI 미리보기 ===== */
+    .gui-mock {
+        background: #0e1422;
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 14px;
+        padding: 16px;
+    }
+
+    .gui-mock-topbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .gui-mock-badge {
+        width: 26px;
+        height: 22px;
+        border-radius: 6px;
+        background: #5b3cf5;
+        color: white;
+        font-size: 10px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .gui-mock-title {
+        color: #dde4f0;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .gui-mock-stats {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .gui-stat {
+        flex: 1;
+        background: #151c2e;
+        border: 1px solid #2a3555;
+        border-radius: 8px;
+        text-align: center;
+        padding: 8px 4px;
+    }
+
+    .gui-stat .num {
+        font-size: 16px;
+        font-weight: 800;
+    }
+
+    .gui-stat .lbl {
+        font-size: 9px;
+        color: #6b7a9a;
+        margin-top: 2px;
+    }
+
+    .gui-mock-log {
+        background: #070d18;
+        border-radius: 8px;
+        padding: 10px;
+        font-family: Consolas, monospace;
+        font-size: 9.5px;
+        color: #6b7a9a;
+        line-height: 1.6;
+    }
+
+    .gui-mock-log .ok { color: #3ddc97; }
+    .gui-mock-log .step { color: #c084fc; }
+    .gui-mock-log .warn { color: #ffb454; }
+
+    /* ===== 개선 예정 ===== */
+    .todo-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 13px;
+        padding: 10px 0;
+        border-bottom: 1px solid #F0F1F4;
+    }
+    .todo-item:last-child { border-bottom: none; }
+
+    .todo-check {
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        border: 2px solid var(--blue);
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    /* ===== 마무리 메시지 ===== */
+    .closing-card {
+        background: linear-gradient(160deg, var(--blue-dark), var(--blue));
+        color: white;
+        border-radius: var(--radius);
+        padding: 24px 20px;
+        text-align: center;
+    }
+
+    .closing-card .icon {
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    #typing-text {
+        font-size: 13px;
+        line-height: 1.8;
+        min-height: 100px;
+        opacity: 0.95;
+    }
+
+    .cursor {
+        display: inline-block;
+        width: 2px;
+        height: 14px;
+        background: var(--green);
+        margin-left: 2px;
+        vertical-align: middle;
+        animation: blink 0.8s step-end infinite;
+    }
+
+    @keyframes blink {
+        50% { opacity: 0; }
+    }
+
+    .footer-note {
+        text-align: center;
+        font-size: 11px;
+        color: var(--text-sub);
+        padding: 20px 24px 0;
+    }
+</style>
+</head>
+<body>
+<div class="app">
+
+    <!-- 1. 상단 히어로 -->
+    <section class="hero">
+        <span class="eyebrow">PORTFOLIO RESULT</span>
+        <h1>SmartCity 회의실 예약 자동화</h1>
+        <p class="subtitle">Playwright 기반 브라우저 자동화 · Tkinter GUI 실행 환경</p>
+        <p class="intro">
+            매번 사내 시스템에 직접 들어가 반복하던<br>
+            회의실 예약 작업을 자동화하고,<br>
+            GUI로 누구나 쉽게 실행할 수 있도록 구성했습니다.
+        </p>
+    </section>
+
+    <!-- 2. 프로젝트 개요 -->
+    <div class="section">
+        <div class="section-title">📋 프로젝트 개요</div>
+        <div class="card">
+            <div class="overview-row">
+                <div class="label">프로젝트명</div>
+                <div class="value">SmartCity 회의실<br>예약 자동화</div>
+            </div>
+            <div class="overview-row">
+                <div class="label">사용 기술</div>
+                <div class="tag-group">
+                    <span class="tag">Python</span>
+                    <span class="tag">Playwright</span>
+                    <span class="tag">Tkinter</span>
+                    <span class="tag">.env</span>
+                </div>
+            </div>
+            <div class="overview-row">
+                <div class="label">구현 방식</div>
+                <div class="value">일반 API 연동이 아닌<br>브라우저 자동화(Playwright) 기반</div>
+            </div>
+            <div class="overview-row">
+                <div class="label">목표</div>
+                <div class="value">반복적인 회의실 예약<br>작업의 완전 자동화</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 자동화 흐름 -->
+    <div class="section">
+        <div class="section-title">🔄 자동화 흐름</div>
+
+        <div class="step-card" data-target="step-1">
+            <div class="step-head">
+                <div class="step-num">①</div>
+                <div class="step-title">GUI 정보 입력</div>
+                <div class="step-arrow">▼</div>
+            </div>
+            <div class="step-body" id="step-1">
+                <div class="step-body-inner">
+                    Tkinter GUI에서 날짜·시간·회의실·위치·회의명을 입력하면 JSON payload로 변환되어 실행 엔진에 전달됩니다.
+                </div>
+            </div>
+        </div>
+
+        <div class="step-card" data-target="step-2">
+            <div class="step-head">
+                <div class="step-num">②</div>
+                <div class="step-title">AD 자동 로그인</div>
+                <div class="step-arrow">▼</div>
+            </div>
+            <div class="step-body" id="step-2">
+                <div class="step-body-inner">
+                    .env에 저장된 사내 AD 계정 정보로 SmartCity에 자동 로그인하고, 실패 시 수동 로그인 대기로 전환합니다.
+                </div>
+            </div>
+        </div>
+
+        <div class="step-card" data-target="step-3">
+            <div class="step-head">
+                <div class="step-num">③</div>
+                <div class="step-title">회의실 검색 및 슬롯 탐색</div>
+                <div class="step-arrow">▼</div>
+            </div>
+            <div class="step-body" id="step-3">
+                <div class="step-body-inner">
+                    선택한 날짜·위치로 검색 후, 예약 가능한 시간 셀을 찾아 회의실 ID·승인유형 등 예약 파라미터를 추출합니다.
+                </div>
+            </div>
+        </div>
+
+        <div class="step-card" data-target="step-4">
+            <div class="step-head">
+                <div class="step-num">④</div>
+                <div class="step-title">예약 정보 자동 입력</div>
+                <div class="step-arrow">▼</div>
+            </div>
+            <div class="step-body" id="step-4">
+                <div class="step-body-inner">
+                    추출한 파라미터로 예약 생성 페이지에 진입해 회의명·시간을 입력하고, 예약자 본인 체크까지 자동으로 처리합니다.
+                </div>
+            </div>
+        </div>
+
+        <div class="step-card" data-target="step-5">
+            <div class="step-head">
+                <div class="step-num">⑤</div>
+                <div class="step-title">예약 실행 및 결과 확인</div>
+                <div class="step-arrow">▼</div>
+            </div>
+            <div class="step-body" id="step-5">
+                <div class="step-body-inner">
+                    예약 버튼 클릭과 확인 알림창 자동 처리 후, 목록 화면으로 돌아가 실제 반영 여부를 스크린샷으로 검증합니다.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 주요 내용 -->
+    <div class="section">
+        <div class="section-title">🏆 주요 내용</div>
+
+        <div class="step-card achievement" data-target="ach-1">
+            <div class="step-head">
+                <div class="step-num">✓</div>
+                <div class="step-title">Playwright 브라우저 자동화 구현</div>
+                <div class="step-arrow">▼</div>
+            </div>
+            <div class="step-body" id="ach-1">
+                <div class="step-body-inner">
+                    로그인부터 검색, 입력, 예약, 결과 확인까지 전체 과정을 실제 브라우저 동작으로 제어했습니다.
+                </div>
+            </div>
+        </div>
+
+        <div class="step-card achievement" data-target="ach-2">
+            <div class="step-head">
+                <div class="step-num">✓</div>
+                <div class="step-title">사내 시스템 UI 변동 대응 로직</div>
+                <div class="step-arrow">▼</div>
+            </div>
+            <div class="step-body" id="ach-2">
+                <div class="step-body-inner">
+                    날짜가 오늘로 되돌아가는 문제, 회의실 행 텍스트가 조금씩 다른 문제 등을 다단계 fallback 탐색으로 해결했습니다.
+                </div>
+            </div>
+        </div>
+
+        <div class="step-card achievement" data-target="ach-3">
+            <div class="step-head">
+                <div class="step-num">✓</div>
+                <div class="step-title">.env 기반 인증 정보 분리</div>
+                <div class="step-arrow">▼</div>
+            </div>
+            <div class="step-body" id="ach-3">
+                <div class="step-body-inner">
+                    AD 계정 정보를 코드와 분리해 안전하게 관리하고, 여러 경로에서 .env를 탐색하도록 구성했습니다.
+                </div>
+            </div>
+        </div>
+
+        <div class="step-card achievement" data-target="ach-4">
+            <div class="step-head">
+                <div class="step-num">✓</div>
+                <div class="step-title">Tkinter GUI 실행 환경 구성</div>
+                <div class="step-arrow">▼</div>
+            </div>
+            <div class="step-body" id="ach-4">
+                <div class="step-body-inner">
+                    입력 패널, 실행 통계 카드, 실시간 로그, 예약현황·취소 기능까지 갖춘 단독 실행형 GUI를 구현했습니다.
+                </div>
+            </div>
+        </div>
+
+        <div class="step-card achievement" data-target="ach-5">
+            <div class="step-head">
+                <div class="step-num">✓</div>
+                <div class="step-title">GUI ↔ 자동화 엔진 연동 구조</div>
+                <div class="step-arrow">▼</div>
+            </div>
+            <div class="step-body" id="ach-5">
+                <div class="step-body-inner">
+                    subprocess + stdin/stdout JSON 통신으로 GUI와 Playwright 엔진을 분리해, 둘 중 하나만 수정해도 안전하게 동작하도록 설계했습니다.
+                </div>
+            </div>
+        </div>
+
+        <div class="step-card achievement" data-target="ach-6">
+            <div class="step-head">
+                <div class="step-num">✓</div>
+                <div class="step-title">예약 현황 조회 / 취소 기능</div>
+                <div class="step-arrow">▼</div>
+            </div>
+            <div class="step-body" id="ach-6">
+                <div class="step-body-inner">
+                    내 예약 목록을 표 형태로 자동 파싱해 보여주고, 선택한 예약을 취소까지 진행할 수 있는 흐름을 구성했습니다.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 실행 화면 미리보기 -->
+    <div class="section">
+        <div class="section-title">🖥️ 실행 화면 미리보기</div>
+        <div class="card">
+            <div class="gui-mock">
+                <div class="gui-mock-topbar">
+                    <div class="gui-mock-badge">SC</div>
+                    <div class="gui-mock-title">SmartCity 회의실 예약 자동화</div>
+                </div>
+                <div class="gui-mock-stats">
+                    <div class="gui-stat"><div class="num" style="color:#4cc2ff;">12</div><div class="lbl">총 실행</div></div>
+                    <div class="gui-stat"><div class="num" style="color:#3ddc97;">11</div><div class="lbl">성공</div></div>
+                    <div class="gui-stat"><div class="num" style="color:#ff6b6b;">1</div><div class="lbl">실패</div></div>
+                </div>
+                <div class="gui-mock-log">
+                    <div><span class="step">▶</span> 예약 실행 2026-06-16 09:12:03</div>
+                    <div>&nbsp;&nbsp;회의실 : 회의실7_B09</div>
+                    <div>&nbsp;&nbsp;날짜&nbsp;&nbsp;&nbsp;: 2026-06-17 14:00 ~ 15:00</div>
+                    <div><span class="ok">✅</span> 예약 대상 확인: 회의실7_B09</div>
+                    <div><span class="warn">⚠️</span> 알림 자동 확인(Enter)</div>
+                    <div><span class="ok">✅</span> 예약 프로세스 완료</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. 개선 예정 -->
+    <div class="section">
+        <div class="section-title">🛠️ 개선 예정</div>
+        <div class="card">
+            <div class="todo-item">
+                <div class="todo-check"></div>
+                <div>위치(캠퍼스·동·층) 매핑 정보 확장</div>
+            </div>
+            <div class="todo-item">
+                <div class="todo-check"></div>
+                <div>예약 취소 로직 완성</div>
+            </div>
+            <div class="todo-item">
+                <div class="todo-check"></div>
+                <div>UI 화면 변동 감지 자동화</div>
+            </div>
+            <div class="todo-item">
+                <div class="todo-check"></div>
+                <div>예외 상황 로그 및 알림 강화</div>
+            </div>
+            <div class="todo-item">
+                <div class="todo-check"></div>
+                <div>다중 회의실 동시 예약 지원</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. 마무리 메시지 -->
+    <div class="section">
+        <div class="closing-card">
+            <div class="icon">💬</div>
+            <div id="typing-text"></div>
+        </div>
+        <p class="footer-note">© 2026 SmartCity 회의실 예약 자동화</p>
+    </div>
+
+</div>
+
+<script>
+    // 아코디언 (자동화 흐름 / 주요 내용)
+    document.querySelectorAll('.step-card').forEach(function (card) {
+        card.addEventListener('click', function () {
+            card.classList.toggle('open');
+        });
+    });
+
+    // 타이핑 효과
+    var fullText = "아직 부족한 부분이 많지만, 하나씩 보완해 나가면서 자동화와 GUI 구현 역량을 기르는 좋은 경험이 되었습니다. 더 좋은 아이디어나 개선할 점이 있다면 언제든 편하게 알려주세요!";
+    var el = document.getElementById('typing-text');
+    var i = 0;
+
+    function typeWriter() {
+        if (i <= fullText.length) {
+            el.innerHTML = fullText.substring(0, i) + '<span class="cursor"></span>';
+            i++;
+            setTimeout(typeWriter, 35);
+        } else {
+            el.innerHTML = fullText + '<span class="cursor"></span>';
+        }
+    }
+
+    window.addEventListener('load', function () {
+        setTimeout(typeWriter, 400);
+    });
+</script>
+</body>
+</html>
